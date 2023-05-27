@@ -1,0 +1,95 @@
+GET http://0.0.0.0:5001/download-update/plc_in HTTP/1.1
+
+
+POST http://0.0.0.0:5002/get-update HTTP/1.1
+content-type: application/json
+
+{
+    "login" : "observer1",
+    "password" : "12345",
+    "module_name" : "plc_in"
+}
+
+
+
+### log_in - подписать URL на получение информации (значений от датчиков), работает с ролями Оператор и Наблюдатель. См. пары логин-пароль в users.json
+
+POST http://0.0.0.0:6069/log_in HTTP/1.1
+content-type: application/json
+auth: very-secure-token
+
+{
+    "login" : "observer1",
+    "password" : "12345",
+    "url" : ""
+}
+
+### log_out, чтобы прекратить получать сообщения.
+
+POST http://0.0.0.0:6069/log_out HTTP/1.1
+content-type: application/json
+auth: very-secure-token
+
+{
+    "login" : "observer1",
+    "password" : "12345",
+    "url" : ""
+}
+
+### upload_settings - загрузить обновленные настройки на SCADA, она их передаст дальше на ПЛК сама. Нужна роль Оператор.
+
+POST http://0.0.0.0:6069/upload_settings HTTP/1.1
+content-type: application/json
+auth: very-secure-token
+
+{
+    "login" : "Vasa",
+    "password" : "123456",
+    "max_power" : 19000,
+    "max_speed": 2900,
+    "max_temperature": 45,
+    "min_power": 1000,
+    "min_speed": 333,
+    "min_temperature": 5
+}
+
+### upload_update - Отправить "обновление" на SCADA, оно само уйдет дальше на ПЛК, где запросит лицензию для проверки валидности. Нужна роль Инженера. 
+
+POST http://0.0.0.0:6069/upload_update HTTP/1.1
+content-type: application/json
+auth: very-secure-token
+login: engineer1
+password: password
+
+{
+    "version" : "version 1"
+}
+
+### После отправки этого запроса сервер лицензирования будет выдавать False на запросы
+
+POST http://0.0.0.0:6067/turn_off HTTP/1.1
+content-type: application/json
+auth: very-secure-token
+
+### После отправки этого запроса сервер лицензирования будет выдавать True на запросы
+
+POST http://0.0.0.0:6067/turn_on HTTP/1.1
+content-type: application/json
+auth: very-secure-token
+
+
+
+### send command to plc - Сюда можно указать команду и целевой девайс. Список команд смотри в коде, но примерно: turn_on, turn_off, reset_range_value для датчиков и reboot для ПЛК.
+
+POST http://0.0.0.0:6069/command_to_plc HTTP/1.1
+content-type: application/json
+auth: very-secure-token
+
+{
+    "login" : "Vasa",
+    "password" : "123456",
+    "device" : "plc",
+    "operation": "reboot"
+    "value": ""
+}
+

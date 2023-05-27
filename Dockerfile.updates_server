@@ -1,0 +1,29 @@
+# For more information, please refer to https://aka.ms/vscode-docker-python
+FROM python:3.8-slim
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
+# Install pip requirements
+COPY requirements.txt .
+RUN python -m pip install -r requirements.txt
+
+COPY updates_server /updates_server
+
+
+# Creates a non-root user with an explicit UID and adds permission to access the /app folder
+# For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
+# unfortunately, it will not work with mapped volumes, so will have to run as root
+# if volumes mapping is not needed (docker-compose.yaml might require changes), then bring the app user back
+#RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /updates_server && chown -R appuser /updates_server/data
+#USER appuser
+
+# During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
+WORKDIR /updates_server
+ENV FLASK_DEBUG=1
+CMD ["python", "server.py"]
+
+EXPOSE 5001/tcp

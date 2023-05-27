@@ -1,0 +1,228 @@
+version: '3.4'
+
+services:
+  su-zookeeper:
+    image: confluentinc/cp-zookeeper:7.2.0
+    container_name: su-zookeeper
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2183
+      ZOOKEEPER_TICK_TIME: 2000
+
+  su-broker:
+    image: confluentinc/cp-kafka:7.2.0
+    container_name: su-broker
+    restart: always
+    ports:
+    # To learn about configuring Kafka for access across networks see
+    # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
+      - "9192:9192"
+    depends_on:
+      - su-zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'su-zookeeper:2183'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://su-broker:9192,PLAINTEXT_INTERNAL://su-broker:29192
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  monitor:
+    image: monitor
+    build:
+      context: .
+      dockerfile: ./Dockerfile.monitor
+    depends_on:
+      - su-broker
+
+  updates-server:
+    image: updates-server
+    build:
+      context: .
+      dockerfile: ./Dockerfile.updates_server    
+    volumes:
+      - ./updates_server/data/:/updates_server/data
+    ports:
+      - "5001:5001"
+
+  downloader:
+    image: downloader
+    build:
+      context: .
+      dockerfile: ./Dockerfile.downloader    
+    depends_on:
+      - updates-server
+      - su-broker
+
+  cutoff:
+    image: cutoff
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.cutoff
+    depends_on:
+      - su-broker
+      - monitor  
+
+  iam:
+    image: iam
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.iam
+    depends_on:
+      - su-broker
+      - monitor
+
+  license_server:
+    image: license_server
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.license_server
+    depends_on:
+      - su-broker
+      - monitor  
+    ports:
+      - "6067:6067" 
+
+  plc_analog:
+    image: plc_analog
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.plc_analog
+    depends_on:
+      - su-broker
+      - monitor
+
+  plc_control:
+    image: plc_control
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.plc_control
+    depends_on:
+      - su-broker
+      - monitor
+
+  plc_digital:
+    image: plc_digital
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.plc_digital
+    depends_on:
+      - su-broker
+      - monitor 
+
+  plc_updater:
+    image: plc_updater
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.plc_updater
+    depends_on:
+      - su-broker
+      - monitor
+
+  power:
+    image: power
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.power
+    depends_on:
+      - su-broker
+      - monitor  
+
+  scada_in:
+    image: scada_in
+    build:
+      context: .
+      dockerfile: ./Dockerfile.scada_in
+    ports:
+      - "6069:6069"
+    depends_on:
+      - su-broker
+      - monitor
+
+  scada_out:
+    image: scada_out
+    build:
+      context: .
+      dockerfile: ./Dockerfile.scada_out
+    ports:
+      - "6070:6070"
+    depends_on:
+      - su-broker
+      - monitor
+
+  speed:
+    image: speed
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.speed
+    depends_on:
+      - su-broker
+      - monitor
+
+  storage:
+    image: storage
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.storage
+    depends_on:
+      - su-broker
+      - monitor
+
+  temperature:
+    image: temperature
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.temperature
+    depends_on:
+      - su-broker
+      - monitor
+
+  update_manager:
+    image: update_manager
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.update_manager
+    depends_on:
+      - su-broker
+      - monitor
+
+  tests:
+    image: tests
+    container_name: tests
+    build:
+      context: .
+      dockerfile: ./Dockerfile.tests
+    ports:
+      - "6064:6064"
+    depends_on:
+      - su-broker
+      - monitor
+      - updates-server
+    
+  # sensors:
+  #   image: sensors
+  #   build:
+  #     context: .
+  #     dockerfile: ./Dockerfile.sensors
+  #   ports:
+  #     - "6068:6068"   
+
+  # plc:
+  #   image: plc
+  #   build:
+  #     context: .
+  #     dockerfile: ./Dockerfile.plc
+  #   volumes:
+  #     - ./storage/:/storage
+  #   ports:
+  #     - "6064:6064"
+  
+  # license_server:
+  #   image: license_server
+  #   build:
+  #     context: .
+  #     dockerfile: ./Dockerfile.license_server
+  #   ports:
+  #     - "6067:6067"

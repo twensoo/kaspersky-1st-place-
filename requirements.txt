@@ -1,0 +1,5 @@
+flask
+requests
+confluent_kafka==2.0.2
+configparser
+python-dotenv

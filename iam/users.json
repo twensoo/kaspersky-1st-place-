@@ -1,0 +1,16 @@
+{
+    "observer": {
+       "observer1": "12345",
+       "observer2": "54321"
+    },
+    "operator": {
+        "Vasa": "123456",
+        "Ivan": "654321"
+    },
+    "engineer": {
+        "engineer1": "password"
+    },
+    "guest": {
+        "guest1": ""
+    }
+}
